@@ -1,0 +1,1 @@
+// export const Hero_Section_Image = "/assets/images/Hero_Section_Image.png";
