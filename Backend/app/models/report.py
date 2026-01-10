@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from app.database import Base
+from sqlalchemy import Column, Integer, String, Boolean
+from app.core.database import Base
 
 class Report(Base):
     __tablename__ = "reports"
 
     id = Column(Integer, primary_key=True)
-    booking_id = Column(Integer, ForeignKey("bookings.id"))
-    file_path = Column(String)
-
+    booking_id = Column(Integer)
+    report_url = Column(String)
+    is_published = Column(Boolean, default=False)

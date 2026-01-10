@@ -1,15 +1,11 @@
-from sqlalchemy import Column, Integer, String, Enum 
-from app.database import Base
-import enum 
+from sqlalchemy import Column, Integer, String, Boolean
+from app.core.database import Base
 
-class Role(enum.Enum): 
-    patient = "patient" 
-    doctor = "doctor"
-    admin = "admin" 
-    
-class User(Base): 
-    __tablename__ = "users" 
+class User(Base):
+    __tablename__ = "users"
+
     id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True, index=True) 
-    hashed_password = Column(String) 
-    role = Column(Enum(Role))
+    name = Column(String)
+    phone = Column(String, unique=True)
+    role = Column(String)  # PATIENT | DOCTOR | ADMIN
+    is_active = Column(Boolean, default=True)
