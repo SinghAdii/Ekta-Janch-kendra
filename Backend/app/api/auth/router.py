@@ -15,6 +15,7 @@ def send_otp(phone: str):
     print("OTP:", otp_store[phone])
     return {"message": "OTP sent"}
 
+@router.post("/verify-otp")
 def verify_otp(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
@@ -32,4 +33,6 @@ def verify_otp(
         db.commit()
 
     token = create_access_token({"user_id": user.id, "role": user.role})
-    return {"access_token": token}
+    return {"access_token": token,
+            "USER_ID":User.id
+            }

@@ -29,14 +29,23 @@ def generate_salary(
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    attendance_days = db.query(Attendance).filter(
+    approved_attendance = db.query(Attendance).filter(
         Attendance.employee_id == employee_id,
-        Attendance.present == True,
+        Attendance.status == "APPROVED",
         extract("month", Attendance.date) == month,
         extract("year", Attendance.date) == year
-    ).count()
+    ).all()
 
-    salary_amount = (employee.base_salary / 30) * attendance_days
+    payable_days = 0
+
+    for a in approved_attendance:
+        if a.worked_minutes >= 480:          # 8 hours
+            payable_days += 1
+        elif a.worked_minutes >= 240:        # 4 hours
+            payable_days += 0.5
+        # else: less than 4 hours → 0 day
+
+    salary_amount = (employee.base_salary / 30) * payable_days
 
     slip = SalarySlip(
         employee_id=employee_id,
@@ -52,9 +61,10 @@ def generate_salary(
         "employee_id": employee_id,
         "month": month,
         "year": year,
-        "present_days": attendance_days,
+        "payable_days": payable_days,
         "salary": salary_amount
     }
+
 
 @router.post("/commission-rule")
 def create_commission_rule(
