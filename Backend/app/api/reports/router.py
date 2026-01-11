@@ -13,18 +13,12 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 
 @router.post("/send-otp")
 def send_otp(phone: str, db: Session = Depends(get_db)):
-    otp = generate_otp()
-
-    record = ReportOTP(
-        phone=phone,
-        otp=otp,
-        expires_at=datetime.utcnow() + timedelta(minutes=5)
-    )
-    db.add(record)
+    otp = generate_otp()   
+    db.add(ReportOTP(phone=phone, otp=otp))
     db.commit()
-
     print("Report OTP:", otp)
     return {"message": "OTP sent"}
+
 
 
 @router.post("/download")

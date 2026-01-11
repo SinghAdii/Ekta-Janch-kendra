@@ -7,9 +7,9 @@ from app.utils.file_upload import save_file
 
 router = APIRouter(prefix="/prescriptions", tags=["Prescriptions"])
 
-@router.post("/upload")
-@router.post("/upload")
-def upload_prescription(
+@router.post("/upload", operation_id="upload_prescription_file")
+
+def upload_prescription_file(
     phone: str = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)

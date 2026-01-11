@@ -5,13 +5,9 @@ otp_store = {}
 OTP_EXPIRY_SECONDS = 300  # 5 minutes
 
 
-def generate_otp(phone: str) -> int:
-    otp = random.randint(100000, 999999)
-    otp_store[phone] = {
-        "otp": otp,
-        "expires_at": time.time() + OTP_EXPIRY_SECONDS
-    }
-    return otp
+
+def generate_otp() -> int:
+    return random.randint(100000, 999999)
 
 
 def verify_otp_for_phone(phone: str, otp: int) -> bool:

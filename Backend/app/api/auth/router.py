@@ -1,38 +1,49 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.utils.otp import generate_otp
 from app.core.security import create_access_token
-from fastapi.security import OAuth2PasswordRequestForm
+from app.schemas.auth import VerifyOTPRequest
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+
 otp_store = {}
 
 @router.post("/send-otp")
 def send_otp(phone: str):
-    otp_store[phone] = generate_otp()
-    print("OTP:", otp_store[phone])
+    otp = generate_otp()
+    otp_store[phone] = otp
+    print("OTP:", otp)
     return {"message": "OTP sent"}
+
 
 @router.post("/verify-otp")
 def verify_otp(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    data: VerifyOTPRequest,
     db: Session = Depends(get_db)
 ):
-    phone = form_data.username
-    otp = int(form_data.password)
+    phone = data.phone
+    otp = data.otp
 
     if otp_store.get(phone) != otp:
-        return {"error": "Invalid OTP"}
+        raise HTTPException(status_code=400, detail="Invalid OTP")
 
     user = db.query(User).filter(User.phone == phone).first()
     if not user:
         user = User(phone=phone, role="PATIENT")
         db.add(user)
         db.commit()
+        db.refresh(user)
 
-    token = create_access_token({"user_id": user.id, "role": user.role})
-    return {"access_token": token,
-            "USER_ID":User.id
-            }
+    token = create_access_token({
+        "user_id": user.id,
+        "role": user.role
+    })
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "role": user.role
+    }
