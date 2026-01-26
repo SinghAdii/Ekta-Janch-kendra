@@ -1,0 +1,197 @@
+import type { HealthPackage } from "./package.types";
+
+export const mockPackages: HealthPackage[] = [
+  {
+    id: "pkg-1",
+    title: "Basic Health Checkup",
+    slug: "basic-health-checkup",
+    subtitle: "Essential tests for overall health screening",
+    image: "/assets/packages/basic.jpg",
+    originalPrice: "₹2,499",
+    discountedPrice: "₹1,799",
+    discountBadge: "28% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 45,
+    parameters: 45,
+    testIds: ["test-1", "test-2", "test-3", "test-6"],
+    description: "Comprehensive health screening package covering basic vital tests.",
+    category: "Preventive Care",
+    isActive: true,
+    createdAt: "2025-11-10",
+    updatedAt: "2026-01-05",
+  },
+  {
+    id: "pkg-2",
+    title: "Advanced Full Body Checkup",
+    slug: "advanced-full-body-checkup",
+    subtitle: "Comprehensive screening with advanced diagnostics",
+    image: "/assets/packages/advanced.jpg",
+    originalPrice: "₹5,999",
+    discountedPrice: "₹3,999",
+    discountBadge: "33% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 98,
+    parameters: 98,
+    testIds: ["test-1", "test-2", "test-3", "test-4", "test-5", "test-6", "test-7", "test-8"],
+    description: "Complete health assessment with advanced cardiac, liver, kidney, and thyroid tests.",
+    category: "Preventive Care",
+    isActive: true,
+    createdAt: "2025-11-15",
+    updatedAt: "2026-01-08",
+  },
+  {
+    id: "pkg-3",
+    title: "Diabetes Care Package",
+    slug: "diabetes-care-package",
+    subtitle: "Specialized tests for diabetes management",
+    image: "/assets/packages/diabetes.jpg",
+    originalPrice: "₹1,999",
+    discountedPrice: "₹1,499",
+    discountBadge: "25% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 18,
+    parameters: 18,
+    testIds: ["test-4", "test-1"],
+    description: "Complete diabetes monitoring package including HbA1c, fasting glucose, and more.",
+    category: "Specialized Care",
+    isActive: true,
+    createdAt: "2025-11-20",
+    updatedAt: "2026-01-07",
+  },
+  {
+    id: "pkg-4",
+    title: "Heart Health Package",
+    slug: "heart-health-package",
+    subtitle: "Cardiac health screening and risk assessment",
+    image: "/assets/packages/heart.jpg",
+    originalPrice: "₹3,499",
+    discountedPrice: "₹2,599",
+    discountBadge: "26% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 35,
+    parameters: 35,
+    testIds: ["test-2", "test-1", "test-6"],
+    description: "Comprehensive cardiac panel with lipid profile, ECG, and stress markers.",
+    category: "Specialized Care",
+    isActive: true,
+    createdAt: "2025-11-25",
+    updatedAt: "2026-01-09",
+  },
+  {
+    id: "pkg-5",
+    title: "Women's Health Package",
+    slug: "womens-health-package",
+    subtitle: "Complete health screening for women",
+    image: "/assets/packages/women.jpg",
+    originalPrice: "₹4,499",
+    discountedPrice: "₹3,199",
+    discountBadge: "29% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 68,
+    parameters: 68,
+    testIds: ["test-5", "test-7", "test-1", "test-3"],
+    description: "Specialized tests for women's health including hormones, vitamins, and cancer screening.",
+    category: "Women's Health",
+    isActive: true,
+    createdAt: "2025-12-01",
+    updatedAt: "2026-01-10",
+  },
+  {
+    id: "pkg-6",
+    title: "Senior Citizen Package",
+    slug: "senior-citizen-package",
+    subtitle: "Comprehensive health checkup for seniors (60+)",
+    image: "/assets/packages/senior.jpg",
+    originalPrice: "₹6,999",
+    discountedPrice: "₹4,999",
+    discountBadge: "29% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 112,
+    parameters: 112,
+    testIds: ["test-1", "test-2", "test-3", "test-4", "test-5", "test-6"],
+    description: "Extensive health panel designed for senior citizens with focus on age-related conditions.",
+    category: "Age-Specific",
+    isActive: true,
+    createdAt: "2025-12-05",
+    updatedAt: "2026-01-08",
+  },
+  {
+    id: "pkg-7",
+    title: "Thyroid Complete Package",
+    slug: "thyroid-complete-package",
+    subtitle: "Complete thyroid function assessment",
+    image: "/assets/packages/thyroid.jpg",
+    originalPrice: "₹1,599",
+    discountedPrice: "₹1,199",
+    discountBadge: "25% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 8,
+    parameters: 8,
+    testIds: ["test-3"],
+    description: "Comprehensive thyroid panel including TSH, T3, T4, and antibodies.",
+    category: "Specialized Care",
+    isActive: true,
+    createdAt: "2025-12-10",
+    updatedAt: "2026-01-09",
+  },
+  {
+    id: "pkg-8",
+    title: "Vitamin & Nutrition Package",
+    slug: "vitamin-nutrition-package",
+    subtitle: "Complete vitamin deficiency screening",
+    image: "/assets/packages/vitamin.jpg",
+    originalPrice: "₹3,999",
+    discountedPrice: "₹2,999",
+    discountBadge: "25% OFF",
+    primaryActionText: "Book Now",
+    secondaryActionText: "View Details",
+    testsIncluded: 12,
+    parameters: 12,
+    testIds: ["test-7", "test-8"],
+    description: "Comprehensive vitamin panel including D, B12, folate, iron, and calcium.",
+    category: "Nutrition",
+    isActive: true,
+    createdAt: "2025-12-15",
+    updatedAt: "2026-01-10",
+  },
+];
+
+// Mock API functions
+export async function fetchPackages(): Promise<HealthPackage[]> {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return mockPackages;
+}
+
+export async function createPackage(packageData: Omit<HealthPackage, "id" | "createdAt" | "updatedAt">): Promise<HealthPackage> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const newPackage: HealthPackage = {
+    ...packageData,
+    id: `pkg-${Date.now()}`,
+    createdAt: new Date().toISOString().split("T")[0],
+    updatedAt: new Date().toISOString().split("T")[0],
+  };
+  return newPackage;
+}
+
+export async function updatePackage(id: string, packageData: Partial<HealthPackage>): Promise<HealthPackage> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const existingPackage = mockPackages.find((p) => p.id === id);
+  if (!existingPackage) throw new Error("Package not found");
+  
+  return {
+    ...existingPackage,
+    ...packageData,
+    updatedAt: new Date().toISOString().split("T")[0],
+  };
+}
+
+export async function deletePackage(id: string): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+}

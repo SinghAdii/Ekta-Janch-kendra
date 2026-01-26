@@ -9,7 +9,7 @@ import { motion, AnimatePresence, Variants } from "motion/react";
 const routes = [
   {
     name: "Home",
-    path: "/",
+    path: "/pages",
   },
   {
     name: "Test Booking",
@@ -70,10 +70,7 @@ export default function Navbar() {
     <nav className="fixed top-0 z-50 w-full bg-primary shadow-md">
       <div className="flex h-24 w-full items-center justify-between px-6">
         {/* Logo */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Link href="/">
             <Image
               src="/assets/images/ekta-logo.png"
@@ -156,7 +153,10 @@ export default function Navbar() {
                 </motion.div>
               ))}
 
-              <motion.div variants={itemVariants} className="h-px w-1/2 bg-white/20 my-2" />
+              <motion.div
+                variants={itemVariants}
+                className="h-px w-1/2 bg-white/20 my-2"
+              />
 
               <motion.div variants={itemVariants} className="flex gap-6">
                 <LucideClipboardCheck className="h-8 w-8" />

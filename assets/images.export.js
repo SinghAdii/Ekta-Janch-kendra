@@ -1,0 +1,17 @@
+export const crouselImg1 = "/assets/images/crousel1.png";
+export const crouselImg2 = "/assets/images/crousel2.png";
+export const crouselImg3 = "/assets/images/crousel3.png";
+export const crouselImg4 = "/assets/images/crousel4.png";
+export const cardImage1 = "/assets/images/cardImage1.png";
+export const ektaLogo = "/assets/images/ekta-logo.png";
+export const workflow1 = "/assets/images/workflow1.png";
+export const workflow2 = "/assets/images/workflow2.png";
+export const workflow3 = "/assets/images/workflow3.png";
+export const avatar1 = "/assets/images/user.png";
+export const circleTest1 = "/assets/images/circlecrousel1.png";
+export const circleTest2 = "/assets/images/circlecrousel2.png";
+export const circleTest3 = "/assets/images/circlecrousel3.png";
+export const circleTest4 = "/assets/images/circlecrousel4.png";
+export const circleTest5 = "/assets/images/circlecrousel5.png";
+export const caller = "/assets/images/caller.png";
+export const appDownload = "/assets/images/appDownload.png";
