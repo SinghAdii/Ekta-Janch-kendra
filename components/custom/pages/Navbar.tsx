@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LucideClipboardCheck, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, ChevronDown, Search, XCircle, CalendarCheck } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, Variants } from "motion/react";
+import { Button } from "@/components/ui/button";
 
 const routes = [
   {
@@ -35,8 +36,22 @@ const routes = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isManageDropdownOpen, setIsManageDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleMenu = () => setIsOpen(!isOpen);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsManageDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const menuVariants: Variants = {
     closed: {
@@ -101,20 +116,67 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Right Side Icons (Desktop) */}
-        <div className="hidden items-center gap-6 text-white lg:flex">
-          <motion.div whileHover={{ rotate: 15 }}>
-            <LucideClipboardCheck className="h-6 w-6 cursor-pointer" />
+        {/* Right Side Buttons (Desktop) */}
+        <div className="hidden items-center gap-4 lg:flex">
+          {/* Book Now Button */}
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link href="/pages/booking">
+              <Button className="bg-white text-primary hover:bg-gray-100 font-semibold px-6">
+                <CalendarCheck className="w-4 h-4 mr-2" />
+                Book Now
+              </Button>
+            </Link>
           </motion.div>
-          <motion.div whileHover={{ scale: 1.1 }}>
-            <Image
-              src="/assets/images/user.png"
-              alt="Profile"
-              width={48}
-              height={48}
-              className="h-12 w-12 rounded-full border-2 border-white"
-            />
-          </motion.div>
+
+          {/* Manage Orders Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="outline"
+                className="bg-transparent border-white text-white hover:bg-white hover:text-primary font-semibold px-6"
+                onClick={() => setIsManageDropdownOpen(!isManageDropdownOpen)}
+                onMouseEnter={() => setIsManageDropdownOpen(true)}
+              >
+                Manage Orders
+                <ChevronDown
+                  className={`w-4 h-4 ml-2 transition-transform duration-200 ${
+                    isManageDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </Button>
+            </motion.div>
+
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {isManageDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border overflow-hidden z-50"
+                  onMouseLeave={() => setIsManageDropdownOpen(false)}
+                >
+                  <Link
+                    href="/pages/track-order"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                    onClick={() => setIsManageDropdownOpen(false)}
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="font-medium">Track Order</span>
+                  </Link>
+                  <Link
+                    href="/pages/cancel-order"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors border-t"
+                    onClick={() => setIsManageDropdownOpen(false)}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span className="font-medium">Cancel Order</span>
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Mobile Menu Button */}
@@ -158,15 +220,39 @@ export default function Navbar() {
                 className="h-px w-1/2 bg-white/20 my-2"
               />
 
-              <motion.div variants={itemVariants} className="flex gap-6">
-                <LucideClipboardCheck className="h-8 w-8" />
-                <Image
-                  src="/assets/images/user.png"
-                  alt="Profile"
-                  width={48}
-                  height={48}
-                  className="h-12 w-12 rounded-full border-2 border-white"
-                />
+              {/* Mobile Action Buttons */}
+              <motion.div variants={itemVariants} className="flex flex-col items-center gap-4 w-full px-8">
+                <Link href="/pages/booking" onClick={toggleMenu} className="w-full">
+                  <Button className="w-full bg-white text-primary hover:bg-gray-100 font-semibold h-12">
+                    <CalendarCheck className="w-5 h-5 mr-2" />
+                    Book Now
+                  </Button>
+                </Link>
+                
+                <div className="text-center text-lg font-medium text-white/80">
+                  Manage Orders
+                </div>
+                
+                <div className="flex gap-4 w-full">
+                  <Link href="/pages/track-order" onClick={toggleMenu} className="flex-1">
+                    <Button
+                      variant="outline"
+                      className="w-full bg-transparent border-white text-white hover:bg-white hover:text-primary font-medium h-12"
+                    >
+                      <Search className="w-4 h-4 mr-2" />
+                      Track
+                    </Button>
+                  </Link>
+                  <Link href="/pages/cancel-order" onClick={toggleMenu} className="flex-1">
+                    <Button
+                      variant="outline"
+                      className="w-full bg-transparent border-white text-white hover:bg-white hover:text-red-600 font-medium h-12"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </Link>
+                </div>
               </motion.div>
             </div>
           </motion.div>

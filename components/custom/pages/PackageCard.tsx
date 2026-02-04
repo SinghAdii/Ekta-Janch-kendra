@@ -28,7 +28,7 @@ export default function PackageCard({
 }: HealthPackageCardProps) {
   const navigate = useRouter();
   const onSecondaryAction = () => navigate.push(`/pages/packages/${slug}`);
-  const onPrimaryAction = () => navigate.push(`/pages/packages/${slug}`);
+  const onPrimaryAction = () => navigate.push(`/pages/booking`);
   return (
     <div className="relative w-full max-w-xs rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition">
       {/* Image */}

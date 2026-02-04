@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, LogIn } from "lucide-react";
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import { IconType } from "react-icons/lib";
@@ -81,6 +81,15 @@ export default function Footer({
 
           {/* Socials */}
           <div className="flex items-center gap-4">
+            {/* Partner Login Button */}
+            <Link
+              href="/login"
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 rounded-lg text-sm font-medium transition-colors"
+            >
+              <LogIn size={16} />
+              Partner Login
+            </Link>
+
             {socials.map((social, index) => {
               const Icon = social.icon;
               return (

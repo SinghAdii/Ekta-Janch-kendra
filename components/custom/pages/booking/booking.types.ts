@@ -74,6 +74,11 @@ export const patientDetailsSchema = z.object({
     .regex(/^[6-9]\d{9}$/, "Please enter a valid 10-digit mobile number")
     .optional()
     .or(z.literal("")),
+  doctorReferralCode: z
+    .string()
+    .max(20, "Referral code cannot exceed 20 characters")
+    .optional()
+    .or(z.literal("")),
 });
 
 // Step 3: Test/Package Selection Schema

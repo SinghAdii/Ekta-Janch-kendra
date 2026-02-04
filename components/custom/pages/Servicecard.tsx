@@ -31,7 +31,7 @@ export default function ServiceCard({
   slug,
 }: ServiceCardProps) {
   const hasBottomContent = Boolean(price && ctaText);
-  const primaryhref = `/pages/test-booking/${slug}`;
+  const primaryhref = `/pages/booking`;
   const secondaryhref = `/pages/test-booking/${slug}`;
 
   const navigate = useRouter();

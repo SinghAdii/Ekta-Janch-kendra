@@ -51,24 +51,34 @@ import {
 
 // Step configuration
 const getSteps = (method: BookingMethod | null) => {
-  const baseSteps = [
-    { id: 1, title: "Booking Type", icon: Home },
-    { id: 2, title: "Patient Details", icon: User },
-    { id: 3, title: "Select Tests", icon: TestTube },
-  ];
-
+  // Home collection: Full flow with test selection and payment
   if (method === "home-collection") {
     return [
-      ...baseSteps,
+      { id: 1, title: "Booking Type", icon: Home },
+      { id: 2, title: "Patient Details", icon: User },
+      { id: 3, title: "Select Tests", icon: TestTube },
       { id: 4, title: "Collection Details", icon: Calendar },
       { id: 5, title: "Payment", icon: CreditCard },
       { id: 6, title: "Verify OTP", icon: Phone },
     ];
   }
 
+  // Lab Visit: Simple flow - just register visit, no test selection or payment
+  if (method === "lab-visit") {
+    return [
+      { id: 1, title: "Booking Type", icon: Home },
+      { id: 2, title: "Patient Details", icon: User },
+      { id: 3, title: "Visit Schedule", icon: Building2 },
+      { id: 4, title: "Verify OTP", icon: Phone },
+    ];
+  }
+
+  // Slot booking: Full flow
   return [
-    ...baseSteps,
-    { id: 4, title: "Lab Visit", icon: Building2 },
+    { id: 1, title: "Booking Type", icon: Home },
+    { id: 2, title: "Patient Details", icon: User },
+    { id: 3, title: "Select Tests", icon: TestTube },
+    { id: 4, title: "Book Slot", icon: Calendar },
     { id: 5, title: "Payment", icon: CreditCard },
     { id: 6, title: "Verify OTP", icon: Phone },
   ];
@@ -100,6 +110,11 @@ export function BookingPage() {
     defaultValues: { method: formData.method },
   });
 
+  // Watch for method selection changes to update step indicator in real-time
+  const watchedMethod = methodForm.watch("method");
+  const displaySteps = currentStep === 1 ? getSteps(watchedMethod || null) : steps;
+  const displayTotalSteps = displaySteps.length;
+
   // Step 2: Patient Details Form
   const patientForm = useForm<PatientDetailsData>({
     resolver: zodResolver(patientDetailsSchema),
@@ -110,6 +125,7 @@ export function BookingPage() {
       age: 0,
       gender: undefined,
       alternateContact: "",
+      doctorReferralCode: "",
     },
   });
 
@@ -159,6 +175,7 @@ export function BookingPage() {
   // Handle step navigation
   const handleNext = async () => {
     let isValid = false;
+    const isLabVisit = formData.method === "lab-visit";
 
     switch (currentStep) {
       case 1:
@@ -176,18 +193,34 @@ export function BookingPage() {
         }
         break;
       case 3:
-        isValid = await testForm.trigger();
-        if (isValid) {
-          const data = testForm.getValues();
-          setFormData((prev) => ({
-            ...prev,
-            tests: data.selectedTests || [],
-            packages: data.selectedPackages || [],
-          }));
+        // For lab-visit, step 3 is Visit Schedule (labVisitForm)
+        // For others, step 3 is Test Selection
+        if (isLabVisit) {
+          isValid = await labVisitForm.trigger();
+          if (isValid) {
+            const data = labVisitForm.getValues();
+            setFormData((prev) => ({ ...prev, labVisit: data }));
+          }
+        } else {
+          isValid = await testForm.trigger();
+          if (isValid) {
+            const data = testForm.getValues();
+            setFormData((prev) => ({
+              ...prev,
+              tests: data.selectedTests || [],
+              packages: data.selectedPackages || [],
+            }));
+          }
         }
         break;
       case 4:
-        if (formData.method === "home-collection") {
+        // For lab-visit, step 4 is OTP (no validation needed, just proceed)
+        // For home-collection, step 4 is Collection Details
+        // For slot-booking, step 4 is Slot Details
+        if (isLabVisit) {
+          // OTP step - handled by StepOTPVerification
+          isValid = true;
+        } else if (formData.method === "home-collection") {
           isValid = await homeCollectionForm.trigger();
           if (isValid) {
             const data = homeCollectionForm.getValues();
@@ -312,13 +345,13 @@ export function BookingPage() {
             <div
               className="absolute left-0 top-5 h-0.5 bg-blue-600 transition-all duration-500 hidden sm:block"
               style={{
-                width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`,
+                width: `${((currentStep - 1) / (displayTotalSteps - 1)) * 100}%`,
               }}
             />
 
             {/* Steps */}
             <div className="flex justify-between w-full relative z-10">
-              {steps.map((step, index) => {
+              {displaySteps.map((step, index) => {
                 const StepIcon = step.icon;
                 const isActive = currentStep === step.id;
                 const isCompleted = currentStep > step.id;
@@ -329,7 +362,7 @@ export function BookingPage() {
                     className={cn(
                       "flex flex-col items-center",
                       index === 0 && "items-start sm:items-center",
-                      index === steps.length - 1 && "items-end sm:items-center"
+                      index === displaySteps.length - 1 && "items-end sm:items-center"
                     )}
                   >
                     <motion.div
@@ -379,7 +412,7 @@ export function BookingPage() {
           {/* Mobile Step Indicator */}
           <div className="mt-4 text-center sm:hidden">
             <span className="text-sm font-medium text-blue-600">
-              Step {currentStep} of {totalSteps}: {steps[currentStep - 1]?.title}
+              Step {currentStep} of {displayTotalSteps}: {displaySteps[currentStep - 1]?.title}
             </span>
           </div>
         </div>
@@ -406,15 +439,27 @@ export function BookingPage() {
                   <StepPatientDetails form={patientForm} />
                 )}
 
-                {/* Step 3: Test Selection */}
+                {/* Step 3: Test Selection OR Lab Visit (for lab-visit method) */}
                 {currentStep === 3 && (
-                  <StepTestSelection form={testForm} />
+                  <>
+                    {formData.method === "lab-visit" ? (
+                      <StepLabVisit form={labVisitForm} />
+                    ) : (
+                      <StepTestSelection form={testForm} />
+                    )}
+                  </>
                 )}
 
-                {/* Step 4: Collection/Visit Details */}
+                {/* Step 4: Collection/Visit Details OR OTP (for lab-visit method) */}
                 {currentStep === 4 && (
                   <>
-                    {formData.method === "home-collection" ? (
+                    {formData.method === "lab-visit" ? (
+                      <StepOTPVerification
+                        mobile={formData.patient?.mobile || ""}
+                        onVerified={handleOTPVerified}
+                        isLoading={isLoading}
+                      />
+                    ) : formData.method === "home-collection" ? (
                       <StepHomeCollection form={homeCollectionForm} />
                     ) : (
                       <StepLabVisit form={labVisitForm} />
@@ -444,7 +489,7 @@ export function BookingPage() {
             </AnimatePresence>
 
             {/* Navigation Buttons */}
-            {currentStep < 6 && (
+            {currentStep < totalSteps && !(formData.method === "lab-visit" && currentStep === 4) && (
               <div className="px-4 sm:px-6 lg:px-8 pb-6 flex justify-between gap-4">
                 <Button
                   type="button"
@@ -462,7 +507,7 @@ export function BookingPage() {
                   onClick={handleNext}
                   className="flex-1 sm:flex-none sm:min-w-30 bg-blue-600 hover:bg-blue-700"
                 >
-                  {currentStep === 5 ? "Verify Mobile" : "Next"}
+                  {currentStep === totalSteps - 1 ? "Verify Mobile" : "Next"}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>

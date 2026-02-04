@@ -354,49 +354,111 @@ function OrderCard({
                   </div>
                 )}
 
-                {/* Individual Tests */}
+                {/* Packages Section - Shown First (More Prominent) */}
+                {order.packages.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-bold flex items-center gap-2 text-primary">
+                        <Package className="h-5 w-5" />
+                        Health Packages ({order.packages.length})
+                      </h4>
+                      <Badge variant="outline" className="text-xs">
+                        {order.packages.reduce((acc, pkg) => acc + pkg.testsIncluded.length, 0)} tests total
+                      </Badge>
+                    </div>
+                    <div className="space-y-4">
+                      {order.packages.map((pkg) => {
+                        const pendingTests = pkg.testsIncluded.filter(t => t.reportStatus === "Pending").length;
+                        const uploadedTests = pkg.testsIncluded.length - pendingTests;
+                        const pkgProgress = (uploadedTests / pkg.testsIncluded.length) * 100;
+                        
+                        return (
+                          <div 
+                            key={pkg.id} 
+                            className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20 overflow-hidden"
+                          >
+                            {/* Package Header */}
+                            <div className="p-4 bg-primary/5 border-b border-primary/10">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-primary/10 rounded-lg">
+                                    <Package className="h-5 w-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <h5 className="font-semibold text-primary">{pkg.packageName}</h5>
+                                    <p className="text-xs text-muted-foreground">
+                                      {pkg.testsIncluded.length} tests included
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium">
+                                      {uploadedTests}/{pkg.testsIncluded.length}
+                                    </span>
+                                    {uploadedTests === pkg.testsIncluded.length ? (
+                                      <Badge className="bg-green-100 text-green-700 text-xs">
+                                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                                        Complete
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="text-xs">
+                                        {pendingTests} pending
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <Progress value={pkgProgress} className="h-1.5 w-24 mt-1.5" />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Package Tests */}
+                            <div className="p-4 space-y-2">
+                              {pkg.testsIncluded.map((test, testIndex) => (
+                                <TestReportRow
+                                  key={test.id}
+                                  test={test}
+                                  onUpload={() => onUploadClick(test)}
+                                  onView={() => onViewReport(test)}
+                                  onDelete={() => onDeleteReport(test)}
+                                  isPackageTest
+                                  testNumber={testIndex + 1}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Individual Tests Section - Shown After Packages */}
                 {order.tests.length > 0 && (
                   <div className="mb-6">
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <TestTube className="h-4 w-4 text-primary" />
-                      Individual Tests ({order.tests.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {order.tests.map((test) => (
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-bold flex items-center gap-2">
+                        <TestTube className="h-5 w-5 text-blue-600" />
+                        Individual Tests ({order.tests.length})
+                      </h4>
+                      {order.packages.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Tests not part of any package
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-2 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-900/20">
+                      {order.tests.map((test, testIndex) => (
                         <TestReportRow
                           key={test.id}
                           test={test}
                           onUpload={() => onUploadClick(test)}
                           onView={() => onViewReport(test)}
                           onDelete={() => onDeleteReport(test)}
+                          testNumber={testIndex + 1}
                         />
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Packages */}
-                {order.packages.length > 0 && (
-                  <div className="mb-6">
-                    {order.packages.map((pkg) => (
-                      <div key={pkg.id} className="mb-4">
-                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                          <Package className="h-4 w-4 text-primary" />
-                          {pkg.packageName} ({pkg.testsIncluded.length} tests)
-                        </h4>
-                        <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                          {pkg.testsIncluded.map((test) => (
-                            <TestReportRow
-                              key={test.id}
-                              test={test}
-                              onUpload={() => onUploadClick(test)}
-                              onView={() => onViewReport(test)}
-                              onDelete={() => onDeleteReport(test)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 )}
 
@@ -451,17 +513,26 @@ function TestReportRow({
   onUpload,
   onView,
   onDelete,
+  isPackageTest = false,
+  testNumber,
 }: {
   test: TestReportItem;
   onUpload: () => void;
   onView: () => void;
   onDelete: () => void;
+  isPackageTest?: boolean;
+  testNumber?: number;
 }) {
   const isUploaded = test.reportStatus === "Uploaded" || test.reportStatus === "Verified";
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/30 transition-colors">
+    <div className={`flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/30 transition-colors ${isPackageTest ? "bg-white dark:bg-gray-900" : ""}`}>
       <div className="flex items-center gap-3 flex-1 min-w-0">
+        {testNumber && (
+          <span className="text-xs font-medium text-muted-foreground w-6 h-6 flex items-center justify-center bg-muted rounded-full shrink-0">
+            {testNumber}
+          </span>
+        )}
         <div className={`p-2 rounded-lg ${isUploaded ? "bg-green-100 dark:bg-green-900/30" : "bg-amber-100 dark:bg-amber-900/30"}`}>
           {isUploaded ? (
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />

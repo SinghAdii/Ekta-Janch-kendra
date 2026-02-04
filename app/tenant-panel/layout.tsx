@@ -1,26 +1,76 @@
 "use client";
 
-import { useState } from "react";
-import { Menu } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Menu, Loader2 } from "lucide-react";
 import { sidebarItems } from "@/components/custom/tenant-panel/tenant.data";
 import { Sidebar } from "@/components/custom/tenant-panel/tenant.components.js";
 import { QueryProvider } from "@/providers";
+import { useAuth, hasRoutePermission, filterSidebarItems } from "@/lib/auth";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Filter sidebar items based on user role
+  const filteredSidebarItems = useMemo(() => {
+    if (!user) return [];
+    return filterSidebarItems(sidebarItems, user.role);
+  }, [user]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Check route permissions and redirect if unauthorized
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const hasPermission = hasRoutePermission(user.role, pathname);
+      if (!hasPermission) {
+        router.push("/unauthorized");
+      }
+    }
+  }, [isLoading, isAuthenticated, user, pathname, router]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-gray-500 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  // Check route permission
+  if (!hasRoutePermission(user.role, pathname)) {
+    return null;
+  }
 
   return (
     <QueryProvider>
       <div className="flex h-screen">
-        {/* Sidebar */}
+        {/* Sidebar with filtered items */}
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          items={sidebarItems}
+          items={filteredSidebarItems}
         />
 
         {/* Main Content */}

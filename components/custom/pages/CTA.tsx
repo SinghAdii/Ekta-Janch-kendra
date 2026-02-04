@@ -1,8 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useRouter } from "next/navigation";
+
 
 export default function CTA() {
+  const navigate = useRouter();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -23,6 +26,7 @@ export default function CTA() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => navigate.push('/pages/booking')}
           className="px-6 py-3 bg-white text-black text-center font-inter font-bold rounded-2xl cursor-pointer shadow-md"
         >
           Book Your Appointment

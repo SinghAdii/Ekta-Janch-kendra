@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -15,7 +21,6 @@ import {
   Phone,
   Barcode,
   RefreshCw,
-  Filter,
   Zap,
   Building2,
   Camera,
@@ -23,7 +28,6 @@ import {
   X,
   Shield,
   Settings,
-  Video,
   CreditCard,
   IndianRupee,
   AlertTriangle,
@@ -31,7 +35,7 @@ import {
   Printer,
   TestTube,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -41,13 +45,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   Dialog,
   DialogContent,
@@ -56,31 +54,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
-import type { LabProcessingItem, OrderStatus, SlotBooking, PaymentMode } from "./lab-management.types";
-import { labProcessingQueue, findOrderByScanInput, identifyScanInput, labBranches, type ScanResult } from "./lab-management.data";
-import { OrderStatusFlow, getNextStatus, canTransitionTo, getStatusMessage } from "../orders/OrderStatusFlow";
+import type {
+  LabProcessingItem,
+  OrderStatus,
+  SlotBooking,
+  PaymentMode,
+} from "./lab-management.types";
+import {
+  labProcessingQueue,
+  identifyScanInput,
+  labBranches,
+} from "./lab-management.data";
+import {
+  OrderStatusFlow,
+  getNextStatus,
+  getStatusMessage,
+} from "../orders/OrderStatusFlow";
 
 // ============ CONSTANTS ============
 const statusColors: Record<string, string> = {
-  "Pending": "bg-amber-100 text-amber-700 border-amber-200",
+  Pending: "bg-amber-100 text-amber-700 border-amber-200",
   "Sample Collected": "bg-purple-100 text-purple-700 border-purple-200",
-  "Processing": "bg-blue-100 text-blue-700 border-blue-200",
+  Processing: "bg-blue-100 text-blue-700 border-blue-200",
   "Report Ready": "bg-cyan-100 text-cyan-700 border-cyan-200",
-  "Completed": "bg-green-100 text-green-700 border-green-200",
+  Completed: "bg-green-100 text-green-700 border-green-200",
   "In Progress": "bg-blue-100 text-blue-700 border-blue-200",
-};
-
-const paymentColors: Record<string, string> = {
-  "Pending": "bg-red-100 text-red-700 border-red-200",
-  "Paid": "bg-green-100 text-green-700 border-green-200",
-  "Partial": "bg-amber-100 text-amber-700 border-amber-200",
 };
 
 const priorityColors: Record<string, string> = {
@@ -106,50 +107,66 @@ export interface LabProcessingPageProps {
   currentBranchId?: string; // From auth context
 }
 
-export default function LabProcessingPage({ 
+export default function LabProcessingPage({
   onSlotBookingDetected,
-  currentBranchId = CURRENT_BRANCH_ID 
+  currentBranchId = CURRENT_BRANCH_ID,
 }: LabProcessingPageProps = {}) {
   // ============ STATE ============
-  const [processingQueue, setProcessingQueue] = useState<LabProcessingItem[]>(labProcessingQueue);
-  const [filteredQueue, setFilteredQueue] = useState<LabProcessingItem[]>(labProcessingQueue);
+  const [processingQueue, setProcessingQueue] =
+    useState<LabProcessingItem[]>(labProcessingQueue);
+  const [filteredQueue, setFilteredQueue] =
+    useState<LabProcessingItem[]>(labProcessingQueue);
   const [searchInput, setSearchInput] = useState("");
-  const [activeTab, setActiveTab] = useState<"pending-payment" | "processing" | "ready">("pending-payment");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [mobileSearchInput, setMobileSearchInput] = useState("");
+  const [searchMode, setSearchMode] = useState<"orderId" | "mobile">("orderId");
+  const [activeTab, setActiveTab] = useState<
+    "pending-payment" | "processing" | "ready"
+  >("pending-payment");
+  const [statusFilter] = useState<string>("all");
+  const [branchFilter] = useState<string>("all");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  
+
   // Scan Result State
-  const [scannedItem, setScannedItem] = useState<LabProcessingItem | null>(null);
+  const [scannedItem, setScannedItem] = useState<LabProcessingItem | null>(
+    null,
+  );
   const [showScanResult, setShowScanResult] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
-  const [branchMismatch, setBranchMismatch] = useState<{ item: LabProcessingItem; message: string } | null>(null);
-  
+  const [branchMismatch, setBranchMismatch] = useState<{
+    item: LabProcessingItem;
+    message: string;
+  } | null>(null);
+
   // Payment Dialog State
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentItem, setPaymentItem] = useState<LabProcessingItem | null>(null);
-  const [selectedPaymentMode, setSelectedPaymentMode] = useState<PaymentMode>("Cash");
+  const [paymentItem, setPaymentItem] = useState<LabProcessingItem | null>(
+    null,
+  );
+  const [selectedPaymentMode, setSelectedPaymentMode] =
+    useState<PaymentMode>("Cash");
   const [paymentAmount, setPaymentAmount] = useState<string>("");
-  
+
   // Processing State
   const [isProcessing, setIsProcessing] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
-  
+
   // Camera State
   const [scanMode, setScanMode] = useState<ScanMode>("manual");
   const [showCameraDialog, setShowCameraDialog] = useState(false);
-  const [cameraPermission, setCameraPermission] = useState<CameraPermissionState>({ status: "prompt" });
+  const [cameraPermission, setCameraPermission] =
+    useState<CameraPermissionState>({ status: "prompt" });
   const [isCameraActive, setIsCameraActive] = useState(false);
-  
+
   // Settings
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [scannerEnabled, setScannerEnabled] = useState(false);
+  const [scannerEnabled] = useState(false);
   const [autoStartProcessing, setAutoStartProcessing] = useState(true);
-  
+
   // Slot booking detection state
-  const [detectedSlotBooking, setDetectedSlotBooking] = useState<SlotBooking | null>(null);
+  const [detectedSlotBooking, setDetectedSlotBooking] =
+    useState<SlotBooking | null>(null);
   const [showSlotBookingDialog, setShowSlotBookingDialog] = useState(false);
-  
+
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -157,23 +174,35 @@ export default function LabProcessingPage({
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get current branch info
-  const currentBranch = useMemo(() => 
-    labBranches.find(b => b.id === currentBranchId) || labBranches[0],
-    [currentBranchId]
+  const currentBranch = useMemo(
+    () => labBranches.find((b) => b.id === currentBranchId) || labBranches[0],
+    [currentBranchId],
   );
 
   // ============ COMPUTED VALUES ============
-  const stats = useMemo(() => ({
-    total: processingQueue.length,
-    pendingPayment: processingQueue.filter((p) => 
-      (p.status === "Pending" || p.status === "Sample Collected") && 
-      (!p.tests?.[0] || p.tests.some(t => t.status === "Pending"))
-    ).length,
-    sampleCollected: processingQueue.filter((p) => p.status === "Sample Collected").length,
-    processing: processingQueue.filter((p) => p.status === "In Progress" || p.tests?.some(t => t.status === "In Progress")).length,
-    reportReady: processingQueue.filter((p) => p.status === "Report Ready").length,
-    myBranch: processingQueue.filter((p) => p.branchId === currentBranchId).length,
-  }), [processingQueue, currentBranchId]);
+  const stats = useMemo(
+    () => ({
+      total: processingQueue.length,
+      pendingPayment: processingQueue.filter(
+        (p) =>
+          (p.status === "Pending" || p.status === "Sample Collected") &&
+          (!p.tests?.[0] || p.tests.some((t) => t.status === "Pending")),
+      ).length,
+      sampleCollected: processingQueue.filter(
+        (p) => p.status === "Sample Collected",
+      ).length,
+      processing: processingQueue.filter(
+        (p) =>
+          p.status === "In Progress" ||
+          p.tests?.some((t) => t.status === "In Progress"),
+      ).length,
+      reportReady: processingQueue.filter((p) => p.status === "Report Ready")
+        .length,
+      myBranch: processingQueue.filter((p) => p.branchId === currentBranchId)
+        .length,
+    }),
+    [processingQueue, currentBranchId],
+  );
 
   // ============ EFFECTS ============
   useEffect(() => {
@@ -185,15 +214,18 @@ export default function LabProcessingPage({
 
     // Filter by tab/category
     if (activeTab === "pending-payment") {
-      filtered = filtered.filter(item => 
-        item.status === "Pending" || item.status === "Sample Collected"
+      filtered = filtered.filter(
+        (item) =>
+          item.status === "Pending" || item.status === "Sample Collected",
       );
     } else if (activeTab === "processing") {
-      filtered = filtered.filter(item => 
-        item.status === "In Progress" || item.tests?.some(t => t.status === "In Progress")
+      filtered = filtered.filter(
+        (item) =>
+          item.status === "In Progress" ||
+          item.tests?.some((t) => t.status === "In Progress"),
       );
     } else if (activeTab === "ready") {
-      filtered = filtered.filter(item => item.status === "Report Ready");
+      filtered = filtered.filter((item) => item.status === "Report Ready");
     }
 
     // Additional status filter within tab
@@ -206,7 +238,7 @@ export default function LabProcessingPage({
       filtered = filtered.filter((item) => item.branchId === branchFilter);
     } else {
       // By default, only show items from current branch
-      filtered = filtered.filter(item => item.branchId === currentBranchId);
+      filtered = filtered.filter((item) => item.branchId === currentBranchId);
     }
 
     setFilteredQueue(filtered);
@@ -216,17 +248,23 @@ export default function LabProcessingPage({
     return () => {
       stopCamera();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkCameraPermission = async (): Promise<boolean> => {
     setCameraPermission({ status: "checking" });
     try {
-      const result = await navigator.permissions.query({ name: "camera" as PermissionName });
+      const result = await navigator.permissions.query({
+        name: "camera" as PermissionName,
+      });
       if (result.state === "granted") {
         setCameraPermission({ status: "granted" });
         return true;
       } else if (result.state === "denied") {
-        setCameraPermission({ status: "denied", error: "Camera access denied. Please enable it in browser settings." });
+        setCameraPermission({
+          status: "denied",
+          error: "Camera access denied. Please enable it in browser settings.",
+        });
         return false;
       }
       setCameraPermission({ status: "prompt" });
@@ -240,7 +278,7 @@ export default function LabProcessingPage({
   const requestCameraAccess = async (): Promise<boolean> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
+        video: { facingMode: "environment" },
       });
       streamRef.current = stream;
       setCameraPermission({ status: "granted" });
@@ -248,11 +286,20 @@ export default function LabProcessingPage({
     } catch (err) {
       const error = err as Error;
       if (error.name === "NotAllowedError") {
-        setCameraPermission({ status: "denied", error: "Camera access denied. Please enable it in browser settings." });
+        setCameraPermission({
+          status: "denied",
+          error: "Camera access denied. Please enable it in browser settings.",
+        });
       } else if (error.name === "NotFoundError") {
-        setCameraPermission({ status: "denied", error: "No camera found on this device." });
+        setCameraPermission({
+          status: "denied",
+          error: "No camera found on this device.",
+        });
       } else {
-        setCameraPermission({ status: "denied", error: "Failed to access camera. Please try again." });
+        setCameraPermission({
+          status: "denied",
+          error: "Failed to access camera. Please try again.",
+        });
       }
       return false;
     }
@@ -285,7 +332,7 @@ export default function LabProcessingPage({
       scanIntervalRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     setIsCameraActive(false);
@@ -299,10 +346,10 @@ export default function LabProcessingPage({
   };
 
   const simulateQRScan = () => {
-    const sampleIds = processingQueue.map(p => p.sampleId);
-    const orderNumbers = processingQueue.map(p => p.orderNumber);
+    const sampleIds = processingQueue.map((p) => p.sampleId);
+    const orderNumbers = processingQueue.map((p) => p.orderNumber);
     const allIds = [...sampleIds, ...orderNumbers];
-    
+
     if (allIds.length > 0 && Math.random() > 0.7) {
       const randomId = allIds[Math.floor(Math.random() * allIds.length)];
       handleScanResult(randomId);
@@ -311,12 +358,14 @@ export default function LabProcessingPage({
   };
 
   // ============ BRANCH VALIDATION ============
-  const validateBranch = (item: LabProcessingItem): { valid: boolean; message?: string } => {
+  const validateBranch = (
+    item: LabProcessingItem,
+  ): { valid: boolean; message?: string } => {
     if (item.branchId !== currentBranchId) {
-      const itemBranch = labBranches.find(b => b.id === item.branchId);
+      const itemBranch = labBranches.find((b) => b.id === item.branchId);
       return {
         valid: false,
-        message: `This order belongs to ${itemBranch?.name || "another branch"} (${itemBranch?.code || item.branchId}). You are logged in at ${currentBranch.name} (${currentBranch.code}). Please update the order in Order Management page if branch transfer is needed.`
+        message: `This order belongs to ${itemBranch?.name || "another branch"} (${itemBranch?.code || item.branchId}). You are logged in at ${currentBranch.name} (${currentBranch.code}). Please update the order in Order Management page if branch transfer is needed.`,
       };
     }
     return { valid: true };
@@ -326,13 +375,13 @@ export default function LabProcessingPage({
   const handleScanResult = (scannedValue: string) => {
     setScanError(null);
     setBranchMismatch(null);
-    
+
     // Use the enhanced scan identification function
     const result = identifyScanInput(scannedValue);
-    
+
     if (result.type === "processing" && result.processingItem) {
       const item = result.processingItem;
-      
+
       // Validate branch
       const branchCheck = validateBranch(item);
       if (!branchCheck.valid) {
@@ -340,7 +389,7 @@ export default function LabProcessingPage({
         setSearchInput("");
         return;
       }
-      
+
       // It's a processing order - show processing dialog
       setScannedItem(item);
       setShowScanResult(true);
@@ -352,7 +401,9 @@ export default function LabProcessingPage({
       setSearchInput("");
     } else {
       // Not found
-      setScanError(`No order or slot booking found for: "${scannedValue}". Please verify the ID or QR code.`);
+      setScanError(
+        `No order or slot booking found for: "${scannedValue}". Please verify the ID or QR code.`,
+      );
       setScannedItem(null);
       setDetectedSlotBooking(null);
     }
@@ -360,13 +411,53 @@ export default function LabProcessingPage({
 
   const handleScanInput = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!searchInput.trim()) {
       setScanError("Please enter an Order ID, Sample ID, or scan QR code");
       return;
     }
 
     handleScanResult(searchInput);
+  };
+
+  // Mobile number search handler
+  const handleMobileSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (mobileSearchInput.length !== 10) {
+      setScanError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    setScanError(null);
+    setBranchMismatch(null);
+
+    // Search for orders by mobile number
+    const foundItem = processingQueue.find(
+      (item) =>
+        item.patientMobile === mobileSearchInput ||
+        item.patientMobile === `+91${mobileSearchInput}` ||
+        item.patientMobile.replace(/\D/g, "").endsWith(mobileSearchInput),
+    );
+
+    if (foundItem) {
+      // Validate branch
+      const branchCheck = validateBranch(foundItem);
+      if (!branchCheck.valid) {
+        setBranchMismatch({ item: foundItem, message: branchCheck.message! });
+        setMobileSearchInput("");
+        return;
+      }
+
+      setScannedItem(foundItem);
+      setShowScanResult(true);
+      setMobileSearchInput("");
+    } else {
+      setScanError(
+        `No order found for mobile number: ${mobileSearchInput}. Please verify the number.`,
+      );
+      setScannedItem(null);
+    }
   };
 
   const handleScanModeChange = (mode: ScanMode) => {
@@ -392,23 +483,23 @@ export default function LabProcessingPage({
 
   const handleCompletePayment = async () => {
     if (!paymentItem) return;
-    
+
     setIsProcessing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      setProcessingQueue(prev =>
-        prev.map(p =>
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      setProcessingQueue((prev) =>
+        prev.map((p) =>
           p.id === paymentItem.id
             ? {
                 ...p,
                 status: "In Progress" as OrderStatus,
                 startedAt: new Date().toISOString(),
               }
-            : p
-        )
+            : p,
+        ),
       );
-      
+
       setShowPaymentDialog(false);
       setPaymentItem(null);
       setActiveTab("processing");
@@ -441,10 +532,10 @@ export default function LabProcessingPage({
                 status: "In Progress" as OrderStatus,
                 startedAt: new Date().toISOString(),
               }
-            : p
-        )
+            : p,
+        ),
       );
-      
+
       setShowScanResult(false);
       setScannedItem(null);
       setActiveTab("processing");
@@ -468,8 +559,8 @@ export default function LabProcessingPage({
                 status: "Report Ready" as OrderStatus,
                 completedAt: new Date().toISOString(),
               }
-            : p
-        )
+            : p,
+        ),
       );
     } catch (error) {
       console.error("Error marking report ready:", error);
@@ -491,8 +582,8 @@ export default function LabProcessingPage({
                 status: "Report Ready" as OrderStatus,
                 completedAt: new Date().toISOString(),
               }
-            : p
-        )
+            : p,
+        ),
       );
 
       setSelectedItems([]);
@@ -508,15 +599,8 @@ export default function LabProcessingPage({
     setSelectedItems((prev) =>
       prev.includes(itemId)
         ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
+        : [...prev, itemId],
     );
-  };
-
-  const handleSelectAllInProgress = () => {
-    const inProgressIds = filteredQueue
-      .filter((item) => item.status === "In Progress")
-      .map((item) => item.id);
-    setSelectedItems(inProgressIds);
   };
 
   // Handle slot booking redirect
@@ -532,7 +616,6 @@ export default function LabProcessingPage({
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <div className="flex-1 p-4 lg:p-6 space-y-5 overflow-auto">
-        
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -540,20 +623,30 @@ export default function LabProcessingPage({
               <FlaskConical className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold tracking-tight">Lab Processing</h1>
+              <h1 className="text-xl lg:text-2xl font-bold tracking-tight">
+                Lab Processing
+              </h1>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Building2 className="h-3.5 w-3.5" />
                 {currentBranch.name} ({currentBranch.code})
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowSettingsDialog(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSettingsDialog(true)}
+            >
               <Settings className="h-4 w-4 mr-1.5" />
               Settings
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setProcessingQueue([...labProcessingQueue])}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setProcessingQueue([...labProcessingQueue])}
+            >
               <RefreshCw className="h-4 w-4 mr-1.5" />
               Refresh
             </Button>
@@ -572,63 +665,170 @@ export default function LabProcessingPage({
                   </div>
                   <div>
                     <h2 className="font-semibold text-gray-900">Scan Sample</h2>
-                    <p className="text-xs text-gray-500">Scan QR code or enter Order/Sample ID</p>
+                    <p className="text-xs text-gray-500">
+                      Scan QR code or enter Order/Sample ID
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  {(["manual", "camera", "scanner"] as ScanMode[]).map((mode) => (
+                  {(["manual"] as ScanMode[]).map((mode) => (
                     <Button
                       key={mode}
                       variant={scanMode === mode ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleScanModeChange(mode)}
-                      disabled={mode === "scanner" && !scannerEnabled}
                       className={cn(
                         "flex-1",
-                        scanMode === mode && "bg-indigo-600 hover:bg-indigo-700"
+                        scanMode === mode &&
+                          "bg-indigo-600 hover:bg-indigo-700",
                       )}
                     >
-                      {mode === "manual" && <Barcode className="h-4 w-4 mr-1.5" />}
-                      {mode === "camera" && <Camera className="h-4 w-4 mr-1.5" />}
-                      {mode === "scanner" && <ScanLine className="h-4 w-4 mr-1.5" />}
+                      {mode === "manual" && (
+                        <Barcode className="h-4 w-4 mr-1.5" />
+                      )}
                       {mode.charAt(0).toUpperCase() + mode.slice(1)}
                     </Button>
                   ))}
+                  {/* Camera - Disabled for now */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="flex-1 opacity-50 cursor-not-allowed"
+                    title="Coming Soon"
+                  >
+                    <Camera className="h-4 w-4 mr-1.5" />
+                    Camera
+                    <Badge
+                      variant="secondary"
+                      className="ml-1.5 text-[10px] px-1 py-0"
+                    >
+                      Soon
+                    </Badge>
+                  </Button>
+                  {/* Scanner - Disabled for now */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="flex-1 opacity-50 cursor-not-allowed"
+                    title="Coming Soon"
+                  >
+                    <ScanLine className="h-4 w-4 mr-1.5" />
+                    Scanner
+                    <Badge
+                      variant="secondary"
+                      className="ml-1.5 text-[10px] px-1 py-0"
+                    >
+                      Soon
+                    </Badge>
+                  </Button>
                 </div>
 
                 {scanMode === "manual" && (
-                  <form onSubmit={handleScanInput}>
-                    <div className="relative">
-                      <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <Input
-                        ref={searchInputRef}
-                        placeholder="Enter Order ID or Sample ID..."
-                        className="pl-11 pr-24 h-12 text-base bg-white border-gray-200 focus:border-indigo-300 focus:ring-indigo-200"
-                        value={searchInput}
-                        onChange={(e) => {
-                          setSearchInput(e.target.value);
-                          setScanError(null);
-                          setBranchMismatch(null);
-                        }}
-                        autoFocus
-                      />
+                  <div className="space-y-3 text-black">
+                    {/* Search Mode Toggle */}
+                    <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
                       <Button
-                        type="submit"
-                        className="absolute right-1.5 top-1.5 h-9 bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+                        type="button"
+                        variant={searchMode === "orderId" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setSearchMode("orderId")}
+                        className={cn(
+                          "flex-1 h-8",
+                          searchMode === "orderId" && "shadow-sm",
+                        )}
                       >
-                        <Search className="h-4 w-4 mr-1.5" />
-                        Scan
+                        <Barcode className="h-4 w-4 mr-1.5" />
+                        Order/Sample ID
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={searchMode === "mobile" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setSearchMode("mobile")}
+                        className={cn(
+                          "flex-1 h-8",
+                          searchMode === "mobile" && "shadow-sm",
+                        )}
+                      >
+                        <Phone className="h-4 w-4 mr-1.5" />
+                        Mobile Number
                       </Button>
                     </div>
-                  </form>
+
+                    {/* Search Input based on mode */}
+                    {searchMode === "orderId" ? (
+                      <form onSubmit={handleScanInput}>
+                        <div className="relative">
+                          <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <Input
+                            ref={searchInputRef}
+                            placeholder="Enter Order ID or Sample ID..."
+                            className="pl-11 pr-24 h-12 text-base bg-white border-gray-200 focus:border-indigo-300 focus:ring-indigo-200"
+                            value={searchInput}
+                            onChange={(e) => {
+                              setSearchInput(e.target.value);
+                              setScanError(null);
+                              setBranchMismatch(null);
+                            }}
+                            autoFocus
+                          />
+                          <Button
+                            type="submit"
+                            className="absolute right-1.5 top-1.5 h-9 bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+                          >
+                            <Search className="h-4 w-4 mr-1.5" />
+                            Search
+                          </Button>
+                        </div>
+                      </form>
+                    ) : (
+                      <form onSubmit={handleMobileSearch}>
+                        <div className="relative">
+                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <Input
+                            placeholder="Enter 10-digit mobile number..."
+                            className="pl-11 pr-24 h-12 text-base bg-white border-gray-200 focus:border-indigo-300 focus:ring-indigo-200"
+                            value={mobileSearchInput}
+                            onChange={(e) => {
+                              const value = e.target.value
+                                .replace(/\D/g, "")
+                                .slice(0, 10);
+                              setMobileSearchInput(value);
+                              setScanError(null);
+                              setBranchMismatch(null);
+                            }}
+                            type="tel"
+                            maxLength={10}
+                          />
+                          <Button
+                            type="submit"
+                            className="absolute right-1.5 top-1.5 h-9 bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+                            disabled={mobileSearchInput.length !== 10}
+                          >
+                            <Search className="h-4 w-4 mr-1.5" />
+                            Validate
+                          </Button>
+                        </div>
+                        {mobileSearchInput && mobileSearchInput.length < 10 && (
+                          <p className="text-xs text-muted-foreground mt-1.5">
+                            Enter {10 - mobileSearchInput.length} more digits
+                          </p>
+                        )}
+                      </form>
+                    )}
+                  </div>
                 )}
 
                 {scanMode === "scanner" && !scannerEnabled && (
                   <Alert>
                     <Shield className="h-4 w-4" />
                     <AlertTitle>Scanner Not Enabled</AlertTitle>
-                    <AlertDescription>Enable external scanner in Settings.</AlertDescription>
+                    <AlertDescription>
+                      Enable external scanner in Settings.
+                    </AlertDescription>
                   </Alert>
                 )}
 
@@ -640,14 +840,17 @@ export default function LabProcessingPage({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                     >
-                      <Alert variant="destructive" className="border-red-200 bg-red-50">
+                      <Alert
+                        variant="destructive"
+                        className="border-red-200 bg-red-50"
+                      >
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Not Found</AlertTitle>
                         <AlertDescription>{scanError}</AlertDescription>
                       </Alert>
                     </motion.div>
                   )}
-                  
+
                   {branchMismatch && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
@@ -656,7 +859,9 @@ export default function LabProcessingPage({
                     >
                       <Alert className="border-amber-200 bg-amber-50">
                         <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        <AlertTitle className="text-amber-800">Branch Mismatch</AlertTitle>
+                        <AlertTitle className="text-amber-800">
+                          Branch Mismatch
+                        </AlertTitle>
                         <AlertDescription className="text-amber-700">
                           {branchMismatch.message}
                         </AlertDescription>
@@ -670,17 +875,23 @@ export default function LabProcessingPage({
               <div className="lg:w-72 grid grid-cols-2 lg:grid-cols-1 gap-3">
                 <div className="p-3 bg-white rounded-xl border border-gray-100">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Pending Payment</span>
+                    <span className="text-xs text-gray-500">
+                      Pending Payment
+                    </span>
                     <CreditCard className="h-4 w-4 text-amber-500" />
                   </div>
-                  <p className="text-2xl font-bold text-amber-600">{stats.pendingPayment}</p>
+                  <p className="text-2xl font-bold text-amber-600">
+                    {stats.pendingPayment}
+                  </p>
                 </div>
                 <div className="p-3 bg-white rounded-xl border border-gray-100">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500">In Processing</span>
                     <Zap className="h-4 w-4 text-blue-500" />
                   </div>
-                  <p className="text-2xl font-bold text-blue-600">{stats.processing}</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {stats.processing}
+                  </p>
                 </div>
               </div>
             </div>
@@ -704,7 +915,9 @@ export default function LabProcessingPage({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Pending Payment</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pending Payment
+                  </p>
                   <p className="text-2xl font-bold">{stats.pendingPayment}</p>
                 </div>
                 <CreditCard className="h-8 w-8 text-amber-200" />
@@ -715,7 +928,9 @@ export default function LabProcessingPage({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Sample Collected</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sample Collected
+                  </p>
                   <p className="text-2xl font-bold">{stats.sampleCollected}</p>
                 </div>
                 <TestTube className="h-8 w-8 text-purple-200" />
@@ -747,34 +962,63 @@ export default function LabProcessingPage({
         </div>
 
         {/* Main Processing Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+          className="space-y-4"
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <TabsList className="bg-white border shadow-sm">
-              <TabsTrigger value="pending-payment" className="gap-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700">
+              <TabsTrigger
+                value="pending-payment"
+                className="gap-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700"
+              >
                 <CreditCard className="h-4 w-4" />
                 <span className="hidden sm:inline">Pending Payment</span>
-                <Badge variant="secondary" className="ml-1 h-5">{stats.pendingPayment}</Badge>
+                <Badge variant="secondary" className="ml-1 h-5">
+                  {stats.pendingPayment}
+                </Badge>
               </TabsTrigger>
-              <TabsTrigger value="processing" className="gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+              <TabsTrigger
+                value="processing"
+                className="gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+              >
                 <Zap className="h-4 w-4" />
                 <span className="hidden sm:inline">Processing</span>
-                <Badge variant="secondary" className="ml-1 h-5">{stats.processing}</Badge>
+                <Badge variant="secondary" className="ml-1 h-5">
+                  {stats.processing}
+                </Badge>
               </TabsTrigger>
-              <TabsTrigger value="ready" className="gap-2 data-[state=active]:bg-cyan-50 data-[state=active]:text-cyan-700">
+              <TabsTrigger
+                value="ready"
+                className="gap-2 data-[state=active]:bg-cyan-50 data-[state=active]:text-cyan-700"
+              >
                 <FileCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">Report Ready</span>
-                <Badge variant="secondary" className="ml-1 h-5">{stats.reportReady}</Badge>
+                <Badge variant="secondary" className="ml-1 h-5">
+                  {stats.reportReady}
+                </Badge>
               </TabsTrigger>
             </TabsList>
 
             {selectedItems.length > 0 && (
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">{selectedItems.length} selected</Badge>
-                <Button size="sm" onClick={() => setShowBulkDialog(true)} className="bg-cyan-600 hover:bg-cyan-700">
+                <Badge variant="secondary">
+                  {selectedItems.length} selected
+                </Badge>
+                <Button
+                  size="sm"
+                  onClick={() => setShowBulkDialog(true)}
+                  className="bg-cyan-600 hover:bg-cyan-700"
+                >
                   <FileCheck className="h-4 w-4 mr-1.5" />
                   Mark Ready
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setSelectedItems([])}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedItems([])}
+                >
                   Clear
                 </Button>
               </div>
@@ -871,47 +1115,82 @@ export default function LabProcessingPage({
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 Order Found
               </DialogTitle>
-              <DialogDescription>Review order details and proceed with the next step</DialogDescription>
+              <DialogDescription>
+                Review order details and proceed with the next step
+              </DialogDescription>
             </DialogHeader>
 
             {scannedItem && (
               <div className="space-y-4">
                 {/* Status Flow Visualization */}
                 <div className="bg-gradient-to-r from-slate-50 to-indigo-50/50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-gray-500 mb-3">ORDER WORKFLOW PROGRESS</p>
+                  <p className="text-xs font-medium text-gray-500 mb-3">
+                    ORDER WORKFLOW PROGRESS
+                  </p>
                   <OrderStatusFlow
-                    status={scannedItem.status as "Pending" | "Sample Collected" | "Processing" | "Report Ready" | "Completed" | "Cancelled"}
-                    source={(scannedItem.source || "Walk-in") as "Walk-in" | "Home Collection" | "Online Test Booking" | "Online Package Booking" | "Slot Booking"}
+                    status={
+                      scannedItem.status === "In Progress"
+                        ? "Processing"
+                        : (scannedItem.status as
+                            | "Pending"
+                            | "Sample Collected"
+                            | "Processing"
+                            | "Report Ready"
+                            | "Completed"
+                            | "Cancelled")
+                    }
+                    source={scannedItem.source || "Walk-in"}
                     variant="compact"
                   />
                   <p className="text-xs text-gray-500 mt-3 text-center">
-                    {getStatusMessage(scannedItem.status as "Pending" | "Sample Collected" | "Processing" | "Report Ready" | "Completed" | "Cancelled", (scannedItem.source || "Walk-in") as "Walk-in" | "Home Collection" | "Online Test Booking" | "Online Package Booking" | "Slot Booking")}
+                    {getStatusMessage(
+                      scannedItem.status === "In Progress"
+                        ? "Processing"
+                        : (scannedItem.status as
+                            | "Pending"
+                            | "Sample Collected"
+                            | "Processing"
+                            | "Report Ready"
+                            | "Completed"
+                            | "Cancelled"),
+                      scannedItem.source || "Walk-in",
+                    )}
                   </p>
                 </div>
 
                 <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Order Number</span>
-                    <span className="font-bold text-indigo-700">{scannedItem.orderNumber}</span>
+                    <span className="font-bold text-indigo-700">
+                      {scannedItem.orderNumber}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Sample ID</span>
-                    <span className="font-mono font-semibold">{scannedItem.sampleId}</span>
+                    <span className="font-mono font-semibold">
+                      {scannedItem.sampleId}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Status</span>
-                    <Badge className={statusColors[scannedItem.status]}>{scannedItem.status}</Badge>
+                    <Badge className={statusColors[scannedItem.status]}>
+                      {scannedItem.status}
+                    </Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Branch</span>
-                    <span className="text-sm font-medium">{scannedItem.branchName}</span>
+                    <span className="text-sm font-medium">
+                      {scannedItem.branchName}
+                    </span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-gray-400" />
-                    <span className="font-medium">{scannedItem.patientName}</span>
+                    <span className="font-medium">
+                      {scannedItem.patientName}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Phone className="h-4 w-4" />
@@ -920,10 +1199,16 @@ export default function LabProcessingPage({
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Tests ({scannedItem.tests.length}):</p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Tests ({scannedItem.tests.length}):
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {scannedItem.tests.map((test) => (
-                      <Badge key={test.id} variant="outline" className="text-xs">
+                      <Badge
+                        key={test.id}
+                        variant="outline"
+                        className="text-xs"
+                      >
                         {test.code} - {test.name}
                       </Badge>
                     ))}
@@ -931,16 +1216,32 @@ export default function LabProcessingPage({
                 </div>
 
                 {/* Next Action Info */}
-                {getNextStatus(scannedItem.status, scannedItem.source || "Walk-in") && (
+                {getNextStatus(
+                  scannedItem.status === "In Progress"
+                    ? "Processing"
+                    : (scannedItem.status as
+                        | "Pending"
+                        | "Sample Collected"
+                        | "Processing"
+                        | "Report Ready"
+                        | "Completed"
+                        | "Cancelled"),
+                  scannedItem.source || "Walk-in",
+                ) && (
                   <Alert className="border-indigo-200 bg-indigo-50">
                     <Zap className="h-4 w-4 text-indigo-600" />
-                    <AlertTitle className="text-indigo-800">Next Step</AlertTitle>
+                    <AlertTitle className="text-indigo-800">
+                      Next Step
+                    </AlertTitle>
                     <AlertDescription className="text-indigo-700">
-                      {scannedItem.status === "Pending" && "Collect payment to automatically start processing."}
-                      {scannedItem.status === "Sample Collected" && "Verify patient details and start processing."}
-                      {scannedItem.status === "Processing" && "Complete all tests to mark report as ready."}
-                      {scannedItem.status === "In Progress" && "Complete all tests to mark report as ready."}
-                      {scannedItem.status === "Report Ready" && "Upload report to complete the order."}
+                      {scannedItem.status === "Pending" &&
+                        "Collect payment to automatically start processing."}
+                      {scannedItem.status === "Sample Collected" &&
+                        "Verify patient details and start processing."}
+                      {scannedItem.status === "In Progress" &&
+                        "Complete all tests to mark report as ready."}
+                      {scannedItem.status === "Report Ready" &&
+                        "Upload report to complete the order."}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -948,11 +1249,17 @@ export default function LabProcessingPage({
             )}
 
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setShowScanResult(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowScanResult(false)}
+              >
                 Cancel
               </Button>
               {scannedItem?.status === "Pending" && (
-                <Button onClick={() => handleOpenPaymentDialog(scannedItem)} className="bg-amber-600 hover:bg-amber-700">
+                <Button
+                  onClick={() => handleOpenPaymentDialog(scannedItem)}
+                  className="bg-amber-600 hover:bg-amber-700"
+                >
                   <CreditCard className="h-4 w-4 mr-2" />
                   Collect Payment
                 </Button>
@@ -996,20 +1303,27 @@ export default function LabProcessingPage({
                 <CreditCard className="h-5 w-5 text-amber-600" />
                 Collect Payment
               </DialogTitle>
-              <DialogDescription>Complete payment to proceed with processing</DialogDescription>
+              <DialogDescription>
+                Complete payment to proceed with processing
+              </DialogDescription>
             </DialogHeader>
 
             {paymentItem && (
               <div className="space-y-4">
                 <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-medium">{paymentItem.orderNumber}</span>
-                    <span className="text-sm text-muted-foreground">{paymentItem.patientName}</span>
+                    <span className="font-medium">
+                      {paymentItem.orderNumber}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {paymentItem.patientName}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Total Amount</span>
                     <span className="text-2xl font-bold text-amber-700 flex items-center">
-                      <IndianRupee className="h-5 w-5" />1,500
+                      <IndianRupee className="h-5 w-5" />
+                      1,500
                     </span>
                   </div>
                 </div>
@@ -1021,11 +1335,16 @@ export default function LabProcessingPage({
                       <Button
                         key={mode}
                         type="button"
-                        variant={selectedPaymentMode === mode ? "default" : "outline"}
-                        onClick={() => setSelectedPaymentMode(mode as PaymentMode)}
+                        variant={
+                          selectedPaymentMode === mode ? "default" : "outline"
+                        }
+                        onClick={() =>
+                          setSelectedPaymentMode(mode as PaymentMode)
+                        }
                         className={cn(
                           "h-12",
-                          selectedPaymentMode === mode && "bg-amber-600 hover:bg-amber-700"
+                          selectedPaymentMode === mode &&
+                            "bg-amber-600 hover:bg-amber-700",
                         )}
                       >
                         {mode}
@@ -1051,10 +1370,17 @@ export default function LabProcessingPage({
             )}
 
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowPaymentDialog(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleCompletePayment} disabled={isProcessing} className="bg-green-600 hover:bg-green-700">
+              <Button
+                onClick={handleCompletePayment}
+                disabled={isProcessing}
+                className="bg-green-600 hover:bg-green-700"
+              >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -1067,7 +1393,10 @@ export default function LabProcessingPage({
         </Dialog>
 
         {/* Camera Dialog */}
-        <Dialog open={showCameraDialog} onOpenChange={(open) => !open && stopCamera()}>
+        <Dialog
+          open={showCameraDialog}
+          onOpenChange={(open) => !open && stopCamera()}
+        >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -1084,9 +1413,7 @@ export default function LabProcessingPage({
                 <Alert variant="destructive">
                   <Shield className="h-4 w-4" />
                   <AlertTitle>Permission Denied</AlertTitle>
-                  <AlertDescription>
-                    {cameraPermission.error}
-                  </AlertDescription>
+                  <AlertDescription>{cameraPermission.error}</AlertDescription>
                 </Alert>
               ) : (
                 <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
@@ -1106,16 +1433,23 @@ export default function LabProcessingPage({
                         <motion.div
                           className="absolute left-0 right-0 h-0.5 bg-indigo-400"
                           animate={{ top: ["10%", "90%", "10%"] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
                         />
                       </div>
                     </div>
                   )}
-                  {!isCameraActive && cameraPermission.status === "checking" && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-white text-sm">Requesting camera access...</div>
-                    </div>
-                  )}
+                  {!isCameraActive &&
+                    cameraPermission.status === "checking" && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-white text-sm">
+                          Requesting camera access...
+                        </div>
+                      </div>
+                    )}
                 </div>
               )}
             </div>
@@ -1144,9 +1478,14 @@ export default function LabProcessingPage({
                   {selectedItems.map((id) => {
                     const item = processingQueue.find((p) => p.id === id);
                     return item ? (
-                      <div key={id} className="flex justify-between text-sm p-2 bg-muted rounded">
+                      <div
+                        key={id}
+                        className="flex justify-between text-sm p-2 bg-muted rounded"
+                      >
                         <span className="font-medium">{item.orderNumber}</span>
-                        <span className="text-muted-foreground">{item.patientName}</span>
+                        <span className="text-muted-foreground">
+                          {item.patientName}
+                        </span>
                       </div>
                     ) : null;
                   })}
@@ -1154,8 +1493,17 @@ export default function LabProcessingPage({
               </ScrollArea>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowBulkDialog(false)}>Cancel</Button>
-              <Button onClick={handleBulkReportReady} disabled={isProcessing} className="bg-cyan-600 hover:bg-cyan-700">
+              <Button
+                variant="outline"
+                onClick={() => setShowBulkDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleBulkReportReady}
+                disabled={isProcessing}
+                className="bg-cyan-600 hover:bg-cyan-700"
+              >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -1178,36 +1526,51 @@ export default function LabProcessingPage({
             </DialogHeader>
 
             <div className="py-4 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between opacity-50">
                 <div>
-                  <Label className="text-sm font-medium">Camera Access</Label>
-                  <p className="text-xs text-muted-foreground">Allow camera for QR scanning</p>
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    Camera Access
+                    <Badge variant="secondary" className="text-[10px]">
+                      Coming Soon
+                    </Badge>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow camera for QR scanning
+                  </p>
                 </div>
-                {cameraPermission.status === "granted" ? (
-                  <Badge className="bg-green-100 text-green-700">Granted</Badge>
-                ) : cameraPermission.status === "denied" ? (
-                  <Badge className="bg-red-100 text-red-700">Denied</Badge>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={requestCameraAccess}>Request</Button>
-                )}
+                <Badge className="bg-gray-100 text-gray-500">Disabled</Badge>
               </div>
 
               <Separator />
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between opacity-50">
                 <div>
-                  <Label className="text-sm font-medium">External Scanner</Label>
-                  <p className="text-xs text-muted-foreground">Enable USB/Bluetooth scanner</p>
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    External Scanner
+                    <Badge variant="secondary" className="text-[10px]">
+                      Coming Soon
+                    </Badge>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable USB/Bluetooth scanner
+                  </p>
                 </div>
-                <Switch checked={scannerEnabled} onCheckedChange={setScannerEnabled} />
+                <Switch checked={false} disabled />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-sm font-medium">Auto-Start Processing</Label>
-                  <p className="text-xs text-muted-foreground">Auto proceed on valid scan</p>
+                  <Label className="text-sm font-medium">
+                    Auto-Start Processing
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Auto proceed on valid scan
+                  </p>
                 </div>
-                <Switch checked={autoStartProcessing} onCheckedChange={setAutoStartProcessing} />
+                <Switch
+                  checked={autoStartProcessing}
+                  onCheckedChange={setAutoStartProcessing}
+                />
               </div>
             </div>
 
@@ -1218,7 +1581,10 @@ export default function LabProcessingPage({
         </Dialog>
 
         {/* Slot Booking Detection Dialog */}
-        <Dialog open={showSlotBookingDialog} onOpenChange={setShowSlotBookingDialog}>
+        <Dialog
+          open={showSlotBookingDialog}
+          onOpenChange={setShowSlotBookingDialog}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -1226,7 +1592,8 @@ export default function LabProcessingPage({
                 Slot Booking Detected
               </DialogTitle>
               <DialogDescription>
-                This scan corresponds to a slot booking that needs details completion
+                This scan corresponds to a slot booking that needs details
+                completion
               </DialogDescription>
             </DialogHeader>
 
@@ -1238,7 +1605,9 @@ export default function LabProcessingPage({
                       <QrCode className="h-5 w-5 text-violet-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Token Number</p>
+                      <p className="text-sm text-muted-foreground">
+                        Token Number
+                      </p>
                       <p className="font-mono font-bold text-lg text-violet-700">
                         {detectedSlotBooking.tokenNumber || "N/A"}
                       </p>
@@ -1246,8 +1615,12 @@ export default function LabProcessingPage({
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Patient Name</span>
-                      <span className="font-medium">{detectedSlotBooking.patientName}</span>
+                      <span className="text-muted-foreground">
+                        Patient Name
+                      </span>
+                      <span className="font-medium">
+                        {detectedSlotBooking.patientName}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Mobile</span>
@@ -1255,15 +1628,22 @@ export default function LabProcessingPage({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Slot</span>
-                      <span>{detectedSlotBooking.slotDate} at {detectedSlotBooking.slotTime}</span>
+                      <span>
+                        {detectedSlotBooking.slotDate} at{" "}
+                        {detectedSlotBooking.slotTime}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Status</span>
-                      <Badge className={cn(
-                        "text-xs",
-                        detectedSlotBooking.status === "Booked" && "bg-blue-100 text-blue-700",
-                        detectedSlotBooking.status === "Confirmed" && "bg-purple-100 text-purple-700"
-                      )}>
+                      <Badge
+                        className={cn(
+                          "text-xs",
+                          detectedSlotBooking.status === "Booked" &&
+                            "bg-blue-100 text-blue-700",
+                          detectedSlotBooking.status === "Confirmed" &&
+                            "bg-purple-100 text-purple-700",
+                        )}
+                      >
                         {detectedSlotBooking.status}
                       </Badge>
                     </div>
@@ -1274,7 +1654,8 @@ export default function LabProcessingPage({
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Action Required</AlertTitle>
                   <AlertDescription>
-                    This patient has a slot booking. Please complete their details and registration to proceed with sample collection.
+                    This patient has a slot booking. Please complete their
+                    details and registration to proceed with sample collection.
                   </AlertDescription>
                 </Alert>
               </div>
@@ -1327,7 +1708,9 @@ function ProcessingQueueItem({
   showCheckbox,
 }: ProcessingQueueItemProps) {
   const isPendingPayment = item.status === "Pending";
-  const isProcessing = item.status === "In Progress" || item.tests?.some(t => t.status === "In Progress");
+  const isProcessing =
+    item.status === "In Progress" ||
+    item.tests?.some((t) => t.status === "In Progress");
   const isReportReady = item.status === "Report Ready";
   const isSampleCollected = item.status === "Sample Collected";
 
@@ -1338,7 +1721,7 @@ function ProcessingQueueItem({
       transition={{ delay: index * 0.03 }}
       className={cn(
         "p-4 hover:bg-slate-50/80 transition-all",
-        isSelected && "bg-indigo-50/50"
+        isSelected && "bg-indigo-50/50",
       )}
     >
       <div className="flex items-start gap-4">
@@ -1353,9 +1736,15 @@ function ProcessingQueueItem({
         <div className="flex-1 min-w-0">
           {/* Header Row */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="font-bold text-indigo-700">{item.orderNumber}</span>
-            <Badge className={cn("text-xs", statusColors[item.status])}>{item.status}</Badge>
-            <Badge className={cn("text-xs", priorityColors[item.priority])}>{item.priority}</Badge>
+            <span className="font-bold text-indigo-700">
+              {item.orderNumber}
+            </span>
+            <Badge className={cn("text-xs", statusColors[item.status])}>
+              {item.status}
+            </Badge>
+            <Badge className={cn("text-xs", priorityColors[item.priority])}>
+              {item.priority}
+            </Badge>
             {isPendingPayment && (
               <Badge className="text-xs bg-red-100 text-red-700 border-red-200">
                 <CreditCard className="h-3 w-3 mr-1" />
@@ -1382,7 +1771,9 @@ function ProcessingQueueItem({
 
           {/* Sample & Tests */}
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-2">
-            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{item.sampleId}</span>
+            <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+              {item.sampleId}
+            </span>
             <span>•</span>
             <span>{item.tests.length} tests</span>
           </div>
@@ -1395,23 +1786,43 @@ function ProcessingQueueItem({
                 variant="outline"
                 className={cn(
                   "text-xs",
-                  test.status === "Completed" && "bg-green-50 border-green-200 text-green-700",
-                  test.status === "In Progress" && "bg-blue-50 border-blue-200 text-blue-700"
+                  test.status === "Completed" &&
+                    "bg-green-50 border-green-200 text-green-700",
+                  test.status === "In Progress" &&
+                    "bg-blue-50 border-blue-200 text-blue-700",
                 )}
               >
                 {test.code}
-                {test.status === "Completed" && <CheckCircle2 className="h-3 w-3 ml-1" />}
+                {test.status === "Completed" && (
+                  <CheckCircle2 className="h-3 w-3 ml-1" />
+                )}
               </Badge>
             ))}
             {item.tests.length > 4 && (
-              <Badge variant="outline" className="text-xs">+{item.tests.length - 4} more</Badge>
+              <Badge variant="outline" className="text-xs">
+                +{item.tests.length - 4} more
+              </Badge>
             )}
           </div>
 
           {/* Timestamps */}
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-2">
-            <span>Received: {new Date(item.receivedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
-            {item.startedAt && <span>Started: {new Date(item.startedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>}
+            <span>
+              Received:{" "}
+              {new Date(item.receivedAt).toLocaleTimeString("en-IN", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+            {item.startedAt && (
+              <span>
+                Started:{" "}
+                {new Date(item.startedAt).toLocaleTimeString("en-IN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            )}
             {item.technicianName && <span>By: {item.technicianName}</span>}
           </div>
         </div>
@@ -1419,19 +1830,31 @@ function ProcessingQueueItem({
         {/* Actions */}
         <div className="flex flex-col gap-2 shrink-0">
           {isPendingPayment && (
-            <Button size="sm" onClick={() => onOpenPayment(item)} className="bg-amber-600 hover:bg-amber-700">
+            <Button
+              size="sm"
+              onClick={() => onOpenPayment(item)}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
               <CreditCard className="h-4 w-4 mr-1.5" />
               Payment
             </Button>
           )}
           {isSampleCollected && (
-            <Button size="sm" onClick={() => onStartProcessing(item)} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button
+              size="sm"
+              onClick={() => onStartProcessing(item)}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
               <Play className="h-4 w-4 mr-1.5" />
               Start
             </Button>
           )}
           {isProcessing && (
-            <Button size="sm" onClick={() => onMarkReportReady(item.id)} className="bg-cyan-600 hover:bg-cyan-700">
+            <Button
+              size="sm"
+              onClick={() => onMarkReportReady(item.id)}
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
               <FileCheck className="h-4 w-4 mr-1.5" />
               Ready
             </Button>

@@ -214,6 +214,7 @@ export interface LabProcessingItem {
   technicianName?: string;
   branchId: string;
   branchName: string;
+  source?: "Walk-in" | "Home Collection" | "Online Test Booking" | "Online Package Booking" | "Slot Booking";
 }
 
 // ============ SLOT BOOKING TYPES ============

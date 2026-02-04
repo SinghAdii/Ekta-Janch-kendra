@@ -174,6 +174,45 @@ export function StepBookingMethod({ form }: StepBookingMethodProps) {
           For urgent tests, please visit our lab directly.
         </p>
       </motion.div>
+
+      {/* Which Option to Choose */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="mt-6"
+      >
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Which option is right for you?</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Home className="w-4 h-4 text-blue-600" />
+              <span className="font-medium text-blue-900 text-sm">Home Collection</span>
+            </div>
+            <p className="text-xs text-blue-700">
+              Best for convenience. Our phlebotomist visits your home to collect samples. Full booking with test selection & payment.
+            </p>
+          </div>
+          <div className="bg-green-50 border border-green-100 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Building2 className="w-4 h-4 text-green-600" />
+              <span className="font-medium text-green-900 text-sm">Visit Lab</span>
+            </div>
+            <p className="text-xs text-green-700">
+              Quick registration. Just fill basic details and complete the rest at our lab. Pay after test selection at lab.
+            </p>
+          </div>
+          <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Calendar className="w-4 h-4 text-purple-600" />
+              <span className="font-medium text-purple-900 text-sm">Book a Slot</span>
+            </div>
+            <p className="text-xs text-purple-700">
+              Complete booking with all details including test selection, time slot & payment. Priority service, no waiting.
+            </p>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

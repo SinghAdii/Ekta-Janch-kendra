@@ -3,7 +3,7 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { motion } from "framer-motion";
-import { User, Phone, Mail, Calendar, Users } from "lucide-react";
+import { User, Phone, Mail, Calendar, Users, Stethoscope } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -246,6 +246,35 @@ export function StepPatientDetails({ form }: StepPatientDetailsProps) {
               )}
             />
           </motion.div>
+
+          {/* Doctor Referral Code */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
+            <FormField
+              control={form.control}
+              name="doctorReferralCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4" />
+                    Doctor Referral Code
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter doctor's referral code (if any)"
+                      className="h-11"
+                      maxLength={20}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </motion.div>
         </form>
       </Form>
 
@@ -253,7 +282,7 @@ export function StepPatientDetails({ form }: StepPatientDetailsProps) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
+        transition={{ delay: 0.8 }}
         className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"
       >
         <p className="text-sm text-blue-800">

@@ -5,14 +5,11 @@ import {
   TestTube,
   Stethoscope,
   LayoutDashboard,
-  FileUp,
-  Truck,
   FlaskConical,
-  Microscope,
-  ClipboardList,
-  UserPlus,
-  CalendarClock,
-  Upload,
+  Package,
+  Building,
+  Settings,
+  Ticket,
 } from "lucide-react";
 
 export const sidebarItems = [
@@ -96,6 +93,32 @@ export const sidebarItems = [
     ],
   },
   {
+    label: "Inventory Management",
+    icon: <Package size={18} />,
+    children: [
+      {
+        label: "Dashboard",
+        href: "/tenant-panel/inventory",
+      },
+      {
+        label: "All Items",
+        href: "/tenant-panel/inventory/all-items",
+      },
+      {
+        label: "Add New Item",
+        href: "/tenant-panel/inventory/add-item",
+      },
+      {
+        label: "Stock Management",
+        href: "/tenant-panel/inventory/stock-management",
+      },
+      {
+        label: "Categories",
+        href: "/tenant-panel/inventory/categories",
+      },
+    ],
+  },
+  {
     label: "Catalog Management",
     icon: <TestTube size={18} />,
     children: [
@@ -135,5 +158,20 @@ export const sidebarItems = [
         href: "/tenant-panel/users",
       },
     ],
+  },
+  {
+    label: "Branch Management",
+    icon: <Building size={18} />,
+    href: "/tenant-panel/branches",
+  },
+  {
+    label: "Coupon Management",
+    icon: <Ticket size={18} />,
+    href: "/tenant-panel/coupon-management",
+  },
+  {
+    label: "Settings",
+    icon: <Settings size={18} />,
+    href: "/tenant-panel/settings",
   },
 ];

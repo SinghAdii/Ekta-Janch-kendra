@@ -385,24 +385,23 @@ export const steps = [
   {
     id: "1",
     image: workflow1,
-    title: "Book Appointment",
+    title: "Choose Your Booking Method",
     description:
-      //generate the long description for each of them by tab pressing
-      "Choose your preferred service, doctor, and time slot effortlessly. Book your appointment with ease and convenience. Book your appointment with ease and convenience.",
+      "Select how you want to get tested - Home Collection for sample pickup at your doorstep, Visit Lab to walk in at your convenience, or Slot Booking for a scheduled appointment with all details upfront.",
   },
   {
     id: "2",
     image: workflow2,
-    title: "Upload Documents",
+    title: "Fill Your Details & Select Tests",
     description:
-      "Securely upload required documents before your visit. Upload your documents with ease and convenience. Upload your documents with ease and convenience.",
+      "Enter your personal information and choose from our wide range of diagnostic tests and health packages. Add a doctor referral code if you have one for easy coordination with your physician.",
   },
   {
     id: "3",
     image: workflow3,
-    title: "Consultation",
+    title: "Schedule & Complete Booking",
     description:
-      "Meet the specialist and get professional advice. Get your consultation with ease and convenience. Get your consultation with ease and convenience. ",
+      "Pick your preferred date and time for sample collection or lab visit. Complete the payment securely online or choose to pay at the lab. Verify with OTP and your booking is confirmed!",
   },
 ];
 

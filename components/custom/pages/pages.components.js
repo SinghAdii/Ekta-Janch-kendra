@@ -10,7 +10,6 @@ export { default as PackageCard } from "./PackageCard";
 export { default as PackageCardCrousel } from "./PackageCardCrousel";
 export { default as CTA } from "./CTA";
 export { default as Footer } from "./Footer";
-export { default as AppointmentCard } from "./AppointmentCard";
 export { default as ReviewCrousel } from "./ReviewCrousel";
 export { default as ReviewCard } from "./ReviewCard";
 export { default as RatingDistribution } from "./RatingDistribution";

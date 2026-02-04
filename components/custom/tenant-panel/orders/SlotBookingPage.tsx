@@ -544,17 +544,27 @@ export default function SlotBookingPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={paymentStatusColors[order.paymentStatus]}>
-                          {order.paymentStatus}
-                        </Badge>
+                        {order.slotBooking?.isDetailsComplete ? (
+                          <Badge className={paymentStatusColors[order.paymentStatus]}>
+                            {order.paymentStatus}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-500 border-gray-300">
+                            Pending Details
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="font-semibold">
-                            {order.totalAmount > 0 ? formatINR(order.totalAmount).replace("₹", "") : "-"}
-                          </span>
-                        </div>
+                        {order.slotBooking?.isDetailsComplete ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-semibold">
+                              {order.totalAmount > 0 ? formatINR(order.totalAmount).replace("₹", "") : "-"}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

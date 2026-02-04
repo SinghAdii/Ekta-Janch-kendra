@@ -841,14 +841,24 @@ export default function SlotBookingManagementPage({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={paymentStatusColors[order.paymentStatus]}>
-                          {order.paymentStatus}
-                        </Badge>
+                        {order.slotBooking?.isDetailsComplete ? (
+                          <Badge className={paymentStatusColors[order.paymentStatus]}>
+                            {order.paymentStatus}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-500 border-gray-300 text-[10px]">
+                            Pending Details
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="font-semibold text-sm">
-                          {order.totalAmount > 0 ? formatINR(order.totalAmount) : "-"}
-                        </span>
+                        {order.slotBooking?.isDetailsComplete ? (
+                          <span className="font-semibold text-sm">
+                            {order.totalAmount > 0 ? formatINR(order.totalAmount) : "-"}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -1536,52 +1546,54 @@ export default function SlotBookingManagementPage({
                     </div>
                   </ScrollArea>
 
-                  <DialogFooter className="pt-4 border-t shrink-0 flex-col sm:flex-row gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCompletionDialogOpen(false)}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-                    <div className="flex gap-2">
-                      <Button 
-                        type="button" 
-                        variant="secondary"
-                        disabled={isSubmitting}
-                        onClick={handleSaveOnly}
-                      >
-                        {isSubmitting && !shouldMoveToProcessing ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Save Details
-                          </>
-                        )}
-                      </Button>
-                      <Button 
+                  <DialogFooter className="pt-4 border-t shrink-0">
+                    <div className="flex flex-col-reverse sm:flex-row w-full sm:justify-between gap-2">
+                      <Button
                         type="button"
+                        variant="outline"
+                        onClick={() => setIsCompletionDialogOpen(false)}
                         disabled={isSubmitting}
-                        onClick={handleSaveAndProcess}
-                        className="bg-blue-600 hover:bg-blue-700"
                       >
-                        {isSubmitting && shouldMoveToProcessing ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving & Moving...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="mr-2 h-4 w-4" />
-                            Save & Move to Processing
-                          </>
-                        )}
+                        Cancel
                       </Button>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button 
+                          type="button" 
+                          variant="secondary"
+                          disabled={isSubmitting}
+                          onClick={handleSaveOnly}
+                        >
+                          {isSubmitting && !shouldMoveToProcessing ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Save Details
+                            </>
+                          )}
+                        </Button>
+                        <Button 
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={handleSaveAndProcess}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {isSubmitting && shouldMoveToProcessing ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving & Moving...
+                            </>
+                          ) : (
+                            <>
+                              <Play className="mr-2 h-4 w-4" />
+                              Save & Move to Processing
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </DialogFooter>
                 </form>

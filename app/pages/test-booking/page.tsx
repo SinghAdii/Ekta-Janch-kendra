@@ -1,12 +1,10 @@
 "use client";
-import { crouselImg1 } from "@/assets/images.export";
 import {
   reviews,
   serviceCardsData,
   steps,
 } from "@/components/custom/pages/Data.pages";
 import {
-  AppointmentCard,
   Herosection,
   RatingDistribution,
   Sectionheading,
@@ -54,23 +52,10 @@ export default function page() {
           description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
         />
         <ServiceCarousel services={serviceCardsData} showPagination={true} />
-        <AppointmentCard
-          image={crouselImg1}
-          title={
-            <>
-              <p>
-                <span className="text-primary font-inter font-semibold">
-                  Book
-                </span>{" "}
-                An Appointment
-              </p>
-            </>
-          }
-        />
         <Sectionheading
-          heading="How Test to be done"
-          keyword="3 easy process"
-          description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+          heading="How to Book Your Test"
+          keyword="3 Easy Steps"
+          description="Book your diagnostic tests in just a few minutes with our simple booking process."
         />
         <ProcessWorkflow steps={steps} />
 

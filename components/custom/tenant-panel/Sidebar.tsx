@@ -5,8 +5,9 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight, X, LogOut } from "lucide-react";
 import { avatar1 } from "@/assets/images.export";
+import { useAuth, ROLE_LABELS } from "@/lib/auth";
 
 export type SidebarItem = {
   label: string;
@@ -28,6 +29,7 @@ export default function Sidebar({ isOpen, onClose, items }: SidebarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   const handleLinkClick = (href?: string) => {
     if (href) {
@@ -38,8 +40,18 @@ export default function Sidebar({ isOpen, onClose, items }: SidebarProps) {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
   const isActive = (href?: string) => {
     if (!href) return false;
+    // Exact match only for root paths like /tenant-panel
+    if (href === "/tenant-panel") {
+      return pathname === href;
+    }
+    // For other paths, allow partial match for child routes
     return pathname === href || pathname.startsWith(href + "/");
   };
 
@@ -90,12 +102,16 @@ export default function Sidebar({ isOpen, onClose, items }: SidebarProps) {
                 height={64}
                 className="rounded-full mb-3 object-cover"
               />
-              <h4 className="font-semibold text-center text-white">Jennifer Arter</h4>
-              <p className="text-xs lg:text-sm opacity-80 text-center">Tenant Manager</p>
+              <h4 className="font-semibold text-center text-white">
+                {user?.name || "Guest User"}
+              </h4>
+              <p className="text-xs lg:text-sm opacity-80 text-center">
+                {user?.role ? ROLE_LABELS[user.role] : "Unknown Role"}
+              </p>
             </div>
 
             {/* Menu */}
-            <nav className="flex-1 overflow-y-auto mt-4 pb-4">
+            <nav className="flex-1 overflow-y-auto mt-4 pb-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30">
               {items.map((item) => {
                 const isOpenSub = openMenu === item.label;
                 const hasActive = hasActiveChild(item.children);
@@ -204,8 +220,16 @@ export default function Sidebar({ isOpen, onClose, items }: SidebarProps) {
             </nav>
 
             {/* Footer */}
-            <div className="border-t border-white/20 px-6 py-4 text-xs opacity-60">
-              <p>© 2026 Ekta Janch Kendra</p>
+            <div className="border-t border-white/20 px-4 py-4">
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition duration-200 mb-3"
+              >
+                <LogOut size={18} />
+                <span className="text-sm font-medium">Sign Out</span>
+              </button>
+              <p className="text-xs opacity-60 text-center">© 2026 Ekta Janch Kendra</p>
             </div>
           </motion.aside>
     </>

@@ -126,8 +126,10 @@ export function BookingSuccess({
                       : "Lab Visit"}
                   </Badge>
                   <Badge className="bg-green-400/30 hover:bg-green-400/40 text-white">
-                    {formData.payment?.paymentMode === "Cash" ||
-                    formData.payment?.paymentMode === "Pay Later"
+                    {formData.method === "lab-visit"
+                      ? "Pay at Lab"
+                      : formData.payment?.paymentMode === "Cash" ||
+                        formData.payment?.paymentMode === "Pay Later"
                       ? "Pay at Collection"
                       : "Paid Online"}
                   </Badge>
@@ -251,6 +253,18 @@ export function BookingSuccess({
 
               {/* Tests & Packages */}
               <div className="space-y-4">
+                {/* For lab-visit without pre-selected tests */}
+                {formData.method === "lab-visit" &&
+                  (!selectedTestDetails || selectedTestDetails.length === 0) &&
+                  (!selectedPackageDetails || selectedPackageDetails.length === 0) && (
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <p className="text-sm text-blue-800 flex items-center gap-2">
+                        <TestTube className="w-4 h-4" />
+                        Tests will be selected at the lab during your visit
+                      </p>
+                    </div>
+                  )}
+
                 {selectedTestDetails && selectedTestDetails.length > 0 && (
                   <div>
                     <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
@@ -302,17 +316,30 @@ export function BookingSuccess({
                   </div>
                 )}
 
-                <Separator className="my-2" />
+                {/* Only show total if there are selected tests/packages */}
+                {grandTotal > 0 && (
+                  <>
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-gray-900">
+                        Total Amount
+                      </span>
+                      <span className="text-xl font-bold text-blue-600 flex items-center">
+                        <IndianRupee className="w-4 h-4" />
+                        {Math.round(grandTotal)}
+                      </span>
+                    </div>
+                  </>
+                )}
 
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-900">
-                    Total Amount
-                  </span>
-                  <span className="text-xl font-bold text-blue-600 flex items-center">
-                    <IndianRupee className="w-4 h-4" />
-                    {Math.round(grandTotal)}
-                  </span>
-                </div>
+                {/* For lab-visit, show pay at lab message */}
+                {formData.method === "lab-visit" && grandTotal === 0 && (
+                  <div className="bg-amber-50 rounded-lg p-4">
+                    <p className="text-sm text-amber-800">
+                      <strong>Payment:</strong> You can pay at the lab after test selection
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
